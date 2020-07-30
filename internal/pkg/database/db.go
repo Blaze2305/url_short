@@ -8,6 +8,7 @@ const databaseName = "shortner"
 type DbMethods interface {
 	ListUrls() (*[]model.Shorten, error)
 	CreateURL(token model.Shorten) (*model.Shorten, error)
+	GetURL(token string) (*string, error)
 }
 
 type db struct {

@@ -70,3 +70,33 @@ func (d db) ListUrls() (*[]model.Shorten, error) {
 
 	return &Urls, nil
 }
+
+func (d db) GetURL(token string) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(d.connection))
+	if err != nil {
+		logger.Errorf("error while connecting to db %s", err.Error())
+		return nil, err
+	}
+
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			logger.Errorf("error while disconnecting db %s", err.Error())
+		}
+	}()
+
+	coll := client.Database(d.dbName).Collection(constants.URLCollection)
+
+	out := model.Shorten{}
+
+	curr := coll.FindOne(ctx, bson.M{"_id": token})
+
+	if err = curr.Decode(&out); err != nil {
+		logger.Errorf("db: error while getting url %s", err.Error())
+		return nil, err
+	}
+
+	return &out.Forward, nil
+}
