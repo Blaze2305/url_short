@@ -16,6 +16,7 @@ type ProviderMethods interface {
 	CreateUser(c *gin.Context)
 	GetUser(c *gin.Context)
 	DeleteUser(c *gin.Context)
+	UpdateUser(c *gin.Context)
 }
 
 // Provider - connection between db and view

@@ -17,17 +17,18 @@ func registerRoutes(ctx *gin.RouterGroup, routeProvider view.ProviderMethods) {
 		c.JSON(200, map[string]string{"Status": "OK"})
 	})
 
-	// Redirect route to redirect to forwarding url from token
+	// Route to redirect to forwarding url from token
 	ctx.GET("/:id", routeProvider.Redirect)
 
 	// URL related route : create , delete urls
 	ctx.POST("/urls", routeProvider.CreateURL)
 	ctx.DELETE("/:id/url", routeProvider.DeleteURL)
 
-	// User related routes : create , get , delete users
+	// User related routes : create , get , delete , edit users
 	ctx.POST("/users", routeProvider.CreateUser)
 	ctx.GET("/:id/user", routeProvider.GetUser)
 	ctx.DELETE("/:id/user", routeProvider.DeleteUser)
+	ctx.PUT("/:id/user", routeProvider.UpdateUser)
 }
 
 func main() {

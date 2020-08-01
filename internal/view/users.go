@@ -55,3 +55,19 @@ func (p Provider) DeleteUser(c *gin.Context) {
 	}
 	c.JSON(200, map[string]string{"Status": "OK", "ID": *user})
 }
+
+// UpdateUser - update user details
+func (p Provider) UpdateUser(c *gin.Context) {
+	userDetails := model.User{}
+	_id := c.Param("id")
+	c.BindJSON(&userDetails)
+
+	userDetails.ID = _id
+
+	err := p.db.UpdateUser(userDetails)
+	if err != nil {
+		util.HTTPError(c, constants.BadRequestCode, err)
+		return
+	}
+	c.JSON(200, map[string]string{"Status": "OK"})
+}

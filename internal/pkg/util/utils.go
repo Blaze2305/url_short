@@ -44,3 +44,11 @@ func GenerateSHA256Hash(input string) (*string, *string) {
 	sha256hash := hex.EncodeToString(h.Sum(nil))
 	return &sha256hash, &salt
 }
+
+// GeneratePasswordHash - Generate password hash given the salt and the plain password
+func GeneratePasswordHash(pass string, salt string) *string {
+	h := sha256.New()
+	h.Write([]byte(pass + salt))
+	sha256hash := hex.EncodeToString(h.Sum(nil))
+	return &sha256hash
+}

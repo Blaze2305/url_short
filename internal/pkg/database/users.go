@@ -2,10 +2,13 @@ package database
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Blaze2305/url_short/internal/pkg/constants"
 	"github.com/Blaze2305/url_short/internal/pkg/model"
+	"github.com/Blaze2305/url_short/internal/pkg/util"
 	logger "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -107,4 +110,59 @@ func (d db) DeleteUser(uid string) (*string, error) {
 		return nil, err
 	}
 	return &uid, nil
+}
+
+func (d db) UpdateUser(input model.User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(d.connection))
+	if err != nil {
+		logger.Errorf("error while connecting to db %s", err.Error())
+		return err
+	}
+
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			logger.Errorf("error while disconnecting db %s", err.Error())
+		}
+	}()
+
+	coll := client.Database(d.dbName).Collection(constants.UserCollection)
+
+	updateMap := map[string]interface{}{}
+
+	fmt.Printf("%#v", input)
+	if input.UserName != "" {
+		updateMap["username"] = input.UserName
+	}
+
+	if input.Email != "" {
+		updateMap["email"] = input.Email
+	}
+
+	if input.Password != "" {
+		user := model.User{}
+		res := coll.FindOne(ctx, bson.M{"_id": input.ID})
+		if err := res.Decode(&user); err != nil {
+			logger.Errorf("error while fetching user from db %s", err.Error())
+			return err
+		}
+		passHash := util.GeneratePasswordHash(input.Password, user.Salt)
+		updateMap["password"] = *passHash
+	}
+
+	resp, err := coll.UpdateOne(ctx, bson.M{"_id": input.ID}, bson.M{"$set": updateMap})
+	if err != nil {
+		logger.Errorf("error while updating user in db %s", err.Error())
+		return err
+	}
+
+	if resp.ModifiedCount != 1 {
+		err = errors.New("db: error while updating user, no docs modified")
+		logger.Error(err.Error())
+		return err
+	}
+
+	return nil
 }

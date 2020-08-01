@@ -14,6 +14,7 @@ type DbMethods interface {
 	CreateUser(input model.User) (*model.User, error)
 	GetUser(uid string) (*model.User, error)
 	DeleteUser(uid string) (*string, error)
+	UpdateUser(input model.User) error
 }
 
 type db struct {
