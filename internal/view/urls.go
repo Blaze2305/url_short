@@ -43,12 +43,27 @@ func (p Provider) Redirect(c *gin.Context) {
 		util.HTTPError(c, constants.BadRequestCode, err)
 		return
 	}
-	log.Printf("%#v", *urlObj)
-	log.Print(c.Request.Host)
-	log.Print(c.Request.RequestURI)
-	// c.JSON(200, map[string]string{"Status": "OK", "Url": *urlObj})
-	// c.Redirect(http.StatusMovedPermanently, "http://google.co.in")
-	// c.Writer.Header().Set("Location", "http://www.google.com")
 	c.Redirect(308, *urlObj)
 	c.Abort()
+}
+
+// ListURLs - list all the available urls
+func (p Provider) ListURLs(c *gin.Context) {
+	urls, err := p.db.ListUrls()
+	if err != nil {
+		util.HTTPError(c, constants.BadRequestCode, err)
+		return
+	}
+	c.JSON(200, *urls)
+}
+
+// DeleteURL - delete a single url
+func (p Provider) DeleteURL(c *gin.Context) {
+	token := c.Param("id")
+	resp, err := p.db.DeleteURL(token)
+	if err != nil {
+		util.HTTPError(c, constants.BadRequestCode, err)
+		return
+	}
+	c.JSON(200, map[string]string{"Status": "OK", "token": *resp})
 }

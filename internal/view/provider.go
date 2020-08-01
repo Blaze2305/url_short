@@ -7,9 +7,15 @@ import (
 
 // ProviderMethods - Provides an interface to keep code clean
 type ProviderMethods interface {
-	CreateURL(c *gin.Context)
-	// ListURLs(c *gin.Context)
 	Redirect(c *gin.Context)
+
+	CreateURL(c *gin.Context)
+	ListURLs(c *gin.Context)
+	DeleteURL(c *gin.Context)
+
+	CreateUser(c *gin.Context)
+	GetUser(c *gin.Context)
+	DeleteUser(c *gin.Context)
 }
 
 // Provider - connection between db and view

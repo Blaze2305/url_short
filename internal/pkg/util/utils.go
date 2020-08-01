@@ -1,29 +1,21 @@
 package util
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"math/rand"
 	"time"
 	"unsafe"
 )
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const (
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+	letterBytes   = "abcdefghijklmnopqrstuvwxyz123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" //The runes for the string
+	letterIdxBits = 6                                                               // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1                                            // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits                                              // # of letter indices fitting in 63 bits
 )
 
 var src = rand.NewSource(time.Now().UnixNano())
-
-// var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-// func NewToken(n int) string {
-// 	b := make([]rune, n)
-// 	for i := range b {
-// 		b[i] = letters[rand.Intn(len(letters))]
-// 	}
-// 	return string(b)
-// }
 
 // NewToken - Creates a new token
 func NewToken(n int) string {
@@ -42,4 +34,13 @@ func NewToken(n int) string {
 	}
 
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+// GenerateSHA256Hash -  generate a sha256 has and return the hash and the salt used
+func GenerateSHA256Hash(input string) (*string, *string) {
+	h := sha256.New()
+	salt := NewToken(7)
+	h.Write([]byte(input + salt))
+	sha256hash := hex.EncodeToString(h.Sum(nil))
+	return &sha256hash, &salt
 }

@@ -6,15 +6,14 @@ import (
 
 	"github.com/Blaze2305/url_short/internal/pkg/constants"
 	"github.com/Blaze2305/url_short/internal/pkg/model"
-
 	logger "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// CreateURL - Create a short url for the given input url
-func (d db) CreateURL(input model.Shorten) (*model.Shorten, error) {
+// CreateUser - create a user
+func (d db) CreateUser(input model.User) (*model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -30,7 +29,7 @@ func (d db) CreateURL(input model.Shorten) (*model.Shorten, error) {
 		}
 	}()
 
-	coll := client.Database(d.dbName).Collection(constants.URLCollection)
+	coll := client.Database(d.dbName).Collection(constants.UserCollection)
 
 	_, err = coll.InsertOne(ctx, input)
 	if err != nil {
@@ -40,8 +39,8 @@ func (d db) CreateURL(input model.Shorten) (*model.Shorten, error) {
 	return &input, nil
 }
 
-// ListUrls - List all available shortned urls
-func (d db) ListUrls() (*[]model.Shorten, error) {
+// GetUser - get user details
+func (d db) GetUser(uid string) (*model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -57,53 +56,21 @@ func (d db) ListUrls() (*[]model.Shorten, error) {
 		}
 	}()
 
-	coll := client.Database(d.dbName).Collection(constants.URLCollection)
+	coll := client.Database(d.dbName).Collection(constants.UserCollection)
 
-	Urls := []model.Shorten{}
+	user := model.User{}
 
-	curr, err := coll.Find(ctx, bson.M{})
+	cur := coll.FindOne(ctx, bson.M{"_id": uid})
 
-	if err = curr.All(ctx, &Urls); err != nil {
-		logger.Errorf("db: error while list urls %s", err.Error())
-		return nil, err
-	}
-
-	return &Urls, nil
-}
-
-// GetURL -  get the forwarding url for the token
-func (d db) GetURL(token string) (*string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(d.connection))
-	if err != nil {
-		logger.Errorf("error while connecting to db %s", err.Error())
-		return nil, err
-	}
-
-	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
-			logger.Errorf("error while disconnecting db %s", err.Error())
-		}
-	}()
-
-	coll := client.Database(d.dbName).Collection(constants.URLCollection)
-
-	out := model.Shorten{}
-
-	curr := coll.FindOne(ctx, bson.M{"_id": token})
-
-	if err = curr.Decode(&out); err != nil {
+	if err := cur.Decode(&user); err != nil {
 		logger.Errorf("db: error while getting url %s", err.Error())
 		return nil, err
 	}
-
-	return &out.Forward, nil
+	return &user, nil
 }
 
-// DeleteURL - delete the url with token and user uid
-func (d db) DeleteURL(token string) (*string, error) {
+// DeleteUser - delete a user
+func (d db) DeleteUser(uid string) (*string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -119,17 +86,25 @@ func (d db) DeleteURL(token string) (*string, error) {
 		}
 	}()
 
-	coll := client.Database(d.dbName).Collection(constants.URLCollection)
+	coll := client.Database(d.dbName).Collection(constants.UserCollection)
 
-	resp, err := coll.DeleteOne(ctx, bson.M{"_id": token})
+	resp, err := coll.DeleteOne(ctx, bson.M{"_id": uid})
 	if err != nil {
-		logger.Errorf("error while connecting to db %s", err.Error())
-		return nil, err
-	}
-	if resp.DeletedCount != 1 {
-		logger.Errorf("error while deleting url %s", token)
+		logger.Errorf("error while deleting user %s", err.Error())
 		return nil, err
 	}
 
-	return &token, nil
+	if resp.DeletedCount != 1 {
+		logger.Errorf("did not delete user %s", uid)
+		return nil, err
+	}
+
+	urlColl := client.Database(d.dbName).Collection(constants.URLCollection)
+
+	_, err = urlColl.DeleteMany(ctx, bson.M{"user": uid})
+	if err != nil {
+		logger.Errorf("error while deleting user %s", err.Error())
+		return nil, err
+	}
+	return &uid, nil
 }

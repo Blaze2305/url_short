@@ -9,6 +9,11 @@ type DbMethods interface {
 	ListUrls() (*[]model.Shorten, error)
 	CreateURL(token model.Shorten) (*model.Shorten, error)
 	GetURL(token string) (*string, error)
+	DeleteURL(token string) (*string, error)
+
+	CreateUser(input model.User) (*model.User, error)
+	GetUser(uid string) (*model.User, error)
+	DeleteUser(uid string) (*string, error)
 }
 
 type db struct {
