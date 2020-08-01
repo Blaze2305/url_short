@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 
 	"github.com/Blaze2305/url_short/internal/pkg/database"
@@ -8,6 +9,8 @@ import (
 	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
 )
+
+var ginMode = flag.String("mode", "debug", "set gin mode to run in [debug | test | release] default = debug ")
 
 // Handle the routes for the application
 func registerRoutes(ctx *gin.RouterGroup, routeProvider view.ProviderMethods) {
@@ -32,10 +35,17 @@ func registerRoutes(ctx *gin.RouterGroup, routeProvider view.ProviderMethods) {
 }
 
 func main() {
-	r := gin.Default()
+	flag.Parse()
 
-	// ***Uncomment when going to prod***
-	// gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(*ginMode)
+
+	r := gin.New()
+
+	// Attach the logger middleware
+	r.Use(gin.Logger())
+
+	// Attach the recovery middleware
+	r.Use(gin.Recovery())
 
 	// location used to get the hostname of the current machine the app is hosted on
 	// so that I dont need to hardcode it if I ever change hosting platforms
