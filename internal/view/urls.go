@@ -15,6 +15,12 @@ import (
 func (p Provider) CreateURL(c *gin.Context) {
 	input := model.Shorten{}
 
+	query := c.Query("token")
+	tokenObj, err := p.db.GetUserFromToken(query)
+	if err != nil {
+		util.HTTPError(c, constants.BadRequestCode, err)
+		return
+	}
 	c.BindJSON(&input)
 
 	token := util.NewToken(5)
@@ -22,10 +28,11 @@ func (p Provider) CreateURL(c *gin.Context) {
 		input.Forward = "https://" + input.Forward
 	}
 	log.Print(token)
+	input.User = tokenObj.ID
 	input.Token = token
 	input.Created = time.Now().String()
 
-	_, err := p.db.CreateURL(input)
+	_, err = p.db.CreateURL(input)
 	if err != nil {
 		util.HTTPError(c, constants.BadRequestCode, err)
 		return

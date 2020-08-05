@@ -19,6 +19,7 @@ type DbMethods interface {
 
 	CreateToken(input model.Token) (*model.Token, error)
 	DeleteToken(token string) (*string, error)
+	GetUserFromToken(token string) (*model.User, error)
 }
 
 type db struct {

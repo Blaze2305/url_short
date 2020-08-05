@@ -2,6 +2,7 @@ package view
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/Blaze2305/url_short/internal/pkg/constants"
@@ -81,15 +82,17 @@ func (p Provider) Login(c *gin.Context) {
 	input := model.User{}
 
 	c.BindJSON(&input)
-
+	log.Printf("%#v", input)
 	user, err := p.db.GetUserByEmail(input.Email)
+	log.Printf("%#v", user)
 	if err != nil {
 		util.HTTPError(c, constants.BadRequestCode, err)
 		return
 	}
 
 	hashCheck := util.GeneratePasswordHash(input.Password, user.Salt)
-	if hashCheck == &user.Password {
+	log.Print(*hashCheck)
+	if user.Password == *hashCheck {
 		token := model.Token{
 			UserID:  user.ID,
 			Created: time.Now().String(),
@@ -114,7 +117,7 @@ func (p Provider) Logout(c *gin.Context) {
 
 	_, err := p.db.DeleteToken(token)
 	if err != nil {
-		util.HTTPError(c, constants.BadRequestCode, errors.New("Please provide proper credentials"))
+		util.HTTPError(c, constants.BadRequestCode, err)
 		return
 	}
 	c.JSON(200, map[string]string{"Status": "OK"})
