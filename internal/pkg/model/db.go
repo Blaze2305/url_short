@@ -15,4 +15,12 @@ type User struct {
 	Email    string `json:"email" bson:"email"`
 	Password string `json:"password" bson:"password"`
 	Salt     string `json:"salt" bson:"salt"`
+	Created  string `json:"created" bson:"created"`
+}
+
+// Token struct defines the token model structure
+type Token struct {
+	ID      string `json:"id" bson:"_id"`
+	UserID  string `json:"userid" bson:"userid"`
+	Created string `json:"created" bson:"created"`
 }

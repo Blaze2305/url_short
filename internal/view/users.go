@@ -1,6 +1,9 @@
 package view
 
 import (
+	"errors"
+	"time"
+
 	"github.com/Blaze2305/url_short/internal/pkg/constants"
 	"github.com/Blaze2305/url_short/internal/pkg/model"
 	"github.com/Blaze2305/url_short/internal/pkg/util"
@@ -21,6 +24,7 @@ func (p Provider) CreateUser(c *gin.Context) {
 
 	input.Password = *passhash
 	input.Salt = *salt
+	input.Created = time.Now().String()
 
 	user, err := p.db.CreateUser(input)
 	if err != nil {
@@ -67,6 +71,50 @@ func (p Provider) UpdateUser(c *gin.Context) {
 	err := p.db.UpdateUser(userDetails)
 	if err != nil {
 		util.HTTPError(c, constants.BadRequestCode, err)
+		return
+	}
+	c.JSON(200, map[string]string{"Status": "OK"})
+}
+
+// Login - user login
+func (p Provider) Login(c *gin.Context) {
+	input := model.User{}
+
+	c.BindJSON(&input)
+
+	user, err := p.db.GetUserByEmail(input.Email)
+	if err != nil {
+		util.HTTPError(c, constants.BadRequestCode, err)
+		return
+	}
+
+	hashCheck := util.GeneratePasswordHash(input.Password, user.Salt)
+	if hashCheck == &user.Password {
+		token := model.Token{
+			UserID:  user.ID,
+			Created: time.Now().String(),
+			ID:      uuid.New().String(),
+		}
+		_, err := p.db.CreateToken(token)
+		if err != nil {
+			util.HTTPError(c, constants.BadRequestCode, err)
+			return
+		}
+		c.JSON(200, token)
+		return
+	}
+
+	util.HTTPError(c, constants.BadRequestCode, errors.New("Please provide proper credentials"))
+	return
+}
+
+// Logout - logs the user out
+func (p Provider) Logout(c *gin.Context) {
+	token := c.Param("id")
+
+	_, err := p.db.DeleteToken(token)
+	if err != nil {
+		util.HTTPError(c, constants.BadRequestCode, errors.New("Please provide proper credentials"))
 		return
 	}
 	c.JSON(200, map[string]string{"Status": "OK"})

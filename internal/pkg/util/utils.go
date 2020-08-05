@@ -39,7 +39,7 @@ func NewToken(n int) string {
 // GenerateSHA256Hash -  generate a sha256 has and return the hash and the salt used
 func GenerateSHA256Hash(input string) (*string, *string) {
 	h := sha256.New()
-	salt := NewToken(7)
+	salt := NewToken(10)
 	h.Write([]byte(input + salt))
 	sha256hash := hex.EncodeToString(h.Sum(nil))
 	return &sha256hash, &salt

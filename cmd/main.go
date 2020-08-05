@@ -32,6 +32,9 @@ func registerRoutes(ctx *gin.RouterGroup, routeProvider view.ProviderMethods) {
 	ctx.GET("/:id/user", routeProvider.GetUser)
 	ctx.DELETE("/:id/user", routeProvider.DeleteUser)
 	ctx.PUT("/:id/user", routeProvider.UpdateUser)
+
+	ctx.POST("/login", routeProvider.Login)
+	ctx.DELETE("/:id/logout", routeProvider.Logout)
 }
 
 func main() {

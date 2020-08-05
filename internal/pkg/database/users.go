@@ -34,6 +34,13 @@ func (d db) CreateUser(input model.User) (*model.User, error) {
 
 	coll := client.Database(d.dbName).Collection(constants.UserCollection)
 
+	count, err := coll.CountDocuments(ctx, bson.M{"email": input.Email})
+	if count > 0 {
+		logger.Errorf("Email account already registerd")
+		newErr := errors.New("Email Account already registed")
+		return nil, newErr
+	}
+
 	_, err = coll.InsertOne(ctx, input)
 	if err != nil {
 		logger.Errorf("Error during insertion %s", err.Error())
@@ -165,4 +172,33 @@ func (d db) UpdateUser(input model.User) error {
 	}
 
 	return nil
+}
+
+func (d db) GetUserByEmail(email string) (*model.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(d.connection))
+	if err != nil {
+		logger.Errorf("error while connecting to db %s", err.Error())
+		return nil, err
+	}
+
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			logger.Errorf("error while disconnecting db %s", err.Error())
+		}
+	}()
+
+	coll := client.Database(d.dbName).Collection(constants.UserCollection)
+
+	user := model.User{}
+
+	cur := coll.FindOne(ctx, bson.M{"email": email})
+
+	if err := cur.Decode(&user); err != nil {
+		logger.Errorf("db: error while getting url %s", err.Error())
+		return nil, err
+	}
+	return &user, nil
 }

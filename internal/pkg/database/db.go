@@ -13,8 +13,12 @@ type DbMethods interface {
 
 	CreateUser(input model.User) (*model.User, error)
 	GetUser(uid string) (*model.User, error)
+	GetUserByEmail(email string) (*model.User, error)
 	DeleteUser(uid string) (*string, error)
 	UpdateUser(input model.User) error
+
+	CreateToken(input model.Token) (*model.Token, error)
+	DeleteToken(token string) (*string, error)
 }
 
 type db struct {
